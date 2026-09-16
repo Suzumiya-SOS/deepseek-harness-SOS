@@ -2,7 +2,7 @@
 
 [English](deepseek-llm-api-wire-extensions.md) | 中文
 
-本参考文档定义 [`@deepseek-ai/dsh-llm-deepseek`](../packages/llm/llm-deepseek/README.zh.md) 在 `deepseek-official` Messages 与 Chat Completions 请求中发送的全部 DeepSeek Harness 特有 HTTP 标头和附加 JSON 字段。本文不重复定义 DeepSeek 上游 API 持有的字段。提供方无关的 LLM（大语言模型）接口与 `llm-pi-ai` 均不实现这些扩展。
+本参考文档定义 [`@deepseek-ai/dsh-llm-deepseek`](../packages/llm/llm-deepseek/README.zh.md) 在 `deepseek-official` Messages 与 Chat Completions 请求中发送的全部 DeepSeek Harness 特有 HTTP 标头和附加 JSON 字段。本文不重复定义 DeepSeek 上游 API 持有的字段。提供方无关的 LLM（大语言模型）接口不实现这些扩展，`llm-pi-ai` 仅在其提供方请求中发送 `x-deepseek-harness-session-id` 标头；该行为由其[包 README](../packages/llm/llm-pi-ai/README.zh.md) 持有。
 
 适配器将这些扩展发送至已解析的 `baseURL`，包括已配置的网关。扩展位于 `messages`、系统提示词和工具 schema 之外，因此不会增加模型输入 token，也不会改变模型可见前缀。
 

@@ -201,13 +201,34 @@ function reasoningInfo(
   }
 }
 
-/** Merge deployment headers while removing case-insensitive attribution collisions. */
-function requestHeaders(headers: Readonly<Record<string, string>> | undefined): Record<string, string> {
+/**
+ * Harness-owned request header carrying the Session id. Both adapters send the
+ * Harness's own name rather than a provider-specific one, so an endpoint that
+ * routes or caches by conversation has one wire fact to recognize — OpenCode Go
+ * rejects a request whose session header it does not know — and an endpoint
+ * that has no use for it ignores it.
+ */
+const SESSION_ID_HEADER = 'x-deepseek-harness-session-id'
+
+/**
+ * Merge deployment headers while removing case-insensitive collisions with
+ * Harness-owned names, which win. Attribution is fixed; the Session id is
+ * present exactly when the request carries one.
+ * @param headers - the route's deployment headers.
+ * @param sessionId - the request's Session id, or undefined for a direct request.
+ * @returns every header this provider request is sent with.
+ */
+function requestHeaders(
+  headers: Readonly<Record<string, string>> | undefined,
+  sessionId: string | undefined,
+): Record<string, string> {
   const attribution = attributionHeaders()
   const reserved = new Set(Object.keys(attribution).map(name => name.toLowerCase()))
+  reserved.add(SESSION_ID_HEADER)
   return {
     ...Object.fromEntries(Object.entries(headers ?? {}).filter(([name]) => !reserved.has(name.toLowerCase()))),
     ...attribution,
+    ...sessionId === undefined ? {} : { [SESSION_ID_HEADER]: sessionId },
   }
 }
 
@@ -383,9 +404,11 @@ export class PiAiAdapter extends LlmAdapter {
         ...options.maxTokens === undefined ? {} : { maxTokens: options.maxTokens },
         ...options.sessionId === undefined ? {} : { sessionId: String(options.sessionId) },
         signal: watchdog.signal,
-        // Profile headers are deployment-owned; attribution names are
-        // Harness-owned and therefore win collisions.
-        headers: requestHeaders(profile.headers),
+        // Profile headers are deployment-owned; Harness-owned names win collisions.
+        headers: requestHeaders(
+          profile.headers,
+          options.sessionId === undefined ? undefined : String(options.sessionId),
+        ),
       })
       const iterator = toStreamChunks(events, model.contextWindow, options.signal, model.id)[Symbol.asyncIterator]()
       let exhausted = false

@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/architecture/2026-09-16-pi-ai-harness-session-header.md
+2026-09-16-pi-ai-harness-session-header.md: 70163c714b3412e506d9cc9a07659616d374e4fb
+2026-09-16-pi-ai-harness-session-header.zh.md: d2d5699335a3d01ff2da33ebb8607cff29ff0163

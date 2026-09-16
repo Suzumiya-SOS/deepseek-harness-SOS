@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Context, Service } from '@deepseek-ai/cordis'
+import { brandString } from '@deepseek-ai/dsh-brand'
+import type { Branded } from '@deepseek-ai/dsh-brand'
 import { AttachmentId, AttachmentStore, ImageVariantId } from '@deepseek-ai/dsh-attachment'
 import type {
   ImageAttachmentLimits,
@@ -121,6 +123,28 @@ describe('PiAiAdapter provider routing', () => {
     await assemble(ctx, { model: 'deepseek-v4-flash', messages: [] })
     expect(server.headers[0]?.['x-company']).toBe('private')
     expect(server.headers[0]?.['user-agent']).toBe(userAgent())
+  })
+
+  it('forwards the Session id to the endpoint, ahead of any deployment header of that name', async () => {
+    const server = await mockServer([{ events: textEvents }])
+    const ctx = await harness(server.url, {
+      headers: { 'X-DeepSeek-Harness-Session-Id': 'deployment-owned' },
+    })
+    await assemble(ctx, {
+      model: 'deepseek-v4-flash',
+      messages: [],
+      sessionId: brandString<Branded<'SessionId'>>('session-1'),
+    })
+    expect(server.headers[0]?.['x-deepseek-harness-session-id']).toBe('session-1')
+  })
+
+  it('omits the Session header from a direct request that carries no Session', async () => {
+    const server = await mockServer([{ events: textEvents }])
+    const ctx = await harness(server.url, {
+      headers: { 'X-DeepSeek-Harness-Session-Id': 'deployment-owned' },
+    })
+    await assemble(ctx, { model: 'deepseek-v4-flash', messages: [] })
+    expect(server.headers[0]).not.toHaveProperty('x-deepseek-harness-session-id')
   })
 
   it('forwards common stream options and profile reasoning', async () => {
